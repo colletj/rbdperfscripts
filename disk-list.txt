@@ -1,0 +1,30 @@
+sda OS 
+sdb OS 
+sdc SSD-only OSD
+sdd RAW fio testing
+sde Mix config (SSD)
+sdf Filestore (SSD)
+sdg HDD-only OSD
+sdh RAW fio testing
+sdi 
+sdj Mix config (HDD)
+sdk 
+sdl Filestore (HDD) 
+sdm 
+sdn 
+sdo 
+sdp 
+sdq 
+sdr 
+sds 
+sdt 
+sdu 
+sdv 
+sdw 
+sdx 
+sdy 
+sdz 
+sdaa
+sdab 
+sdac
+sdad

@@ -1,0 +1,16 @@
+[global]
+ioengine=rbd
+clientname=admin
+pool=pool_hdd
+rbdname=test
+rw=randwrite
+bs=4k
+runtime=300s
+
+[rbd_iodepth16]
+iodepth=16
+runtime=300s
+
+[rbd_iodepth8]
+iodepth=8
+runtime=300s
