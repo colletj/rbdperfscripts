@@ -12,9 +12,10 @@ with OPTIONS
     -f <ssd3,hdd3> set disks used in the mixed filestore configuration, ssd first then hdd (e.g. -f sdf,sdl)
     -s <ssd> set disk used in ssd-only configuration (e.g. -s sdc)
     -d <ssd> set disk used in hdd-only configuration (e.g. -d sdg)
+    -c <ssd4,hdd4> set disks used in the dm-cache configuration, ssd first then hdd (e.g. -m sdd,sdn)
 "
 
-while getopts 'hr:m:f:s:d:' opt; do
+while getopts 'hc:r:m:f:s:d:' opt; do
   case "$opt" in
     h) echo "$usage"
        exit
@@ -24,6 +25,9 @@ while getopts 'hr:m:f:s:d:' opt; do
        ;;
     m) osd_mix_ssd=`echo $OPTARG | sed 's/,.*//'`
        osd_mix_hdd=`echo $OPTARG | sed 's/.*,//'`
+       ;;
+    c) osd_dmc_ssd=`echo $OPTARG | sed 's/,.*//'`
+       osd_dmc_hdd=`echo $OPTARG | sed 's/.*,//'`
        ;;
     f) osd_fs_ssd=`echo $OPTARG | sed 's/,.*//'`
        osd_fs_hdd=`echo $OPTARG | sed 's/.*,//'`
@@ -54,22 +58,24 @@ echo 3 | tee /proc/sys/vm/drop_caches && sync
 # osd_mix_hdd : sdj
 # osd_fs_ssd : sdf
 # osd_fs_hdd : sdl
+# osd_dmc_ssd : sdd
+# osd_dmc_hdd : sdn
 
 # Disk level
-blocksize=4K
-
-for iod in 1 2 4 8 16 32;
-do 
-  for target in $disk_target_ssd $disk_target_hdd; 
-  do
-    start=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`;
-    /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio --filename=/dev/$target --direct=1 --sync=1 --rw=randwrite --bs=$blocksize --numjobs=1 --iodepth=$iod --runtime=60 --time_based --ioengine=libaio --group_reporting --name="$target"_"$blocksize"_"$iod"_test_run_00 
-    end=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: " $(( $end - $start ))
-  done
-done
-
-sleep 10
+#blocksize=4K
+#
+#for iod in 1 2 4 8 16 32;
+#do 
+#  for target in $disk_target_ssd $disk_target_hdd; 
+#  do
+#    start=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`;
+#    /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio --filename=/dev/$target --direct=1 --sync=1 --rw=randwrite --bs=$blocksize --numjobs=1 --iodepth=$iod --runtime=60 --time_based --ioengine=libaio --group_reporting --name="$target"_"$blocksize"_"$iod"_test_run_00 
+#    end=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`
+#    echo "util time: " $(( $end - $start ))
+#  done
+#done
+#
+#sleep 10
 
 # Rados level
 echo "RADOS level"
@@ -102,11 +108,20 @@ do
   echo "util time: (hdd) " $(( $end_1 - $start_1 ))
   echo "util time: (ssd) " $(( $end_2 - $start_2 ))
 
+  start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+  start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+  /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_dmc 45 write --no-cleanup  -t $i -b 4096
+  end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+  end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+  echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+  echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+
   sleep 5
 
   rados -p pool_ssd cleanup
   rados -p pool_hdd cleanup
   rados -p pool_mix cleanup
+  rados -p pool_dmc cleanup
   rados -p pool_fs cleanup
 done
 
@@ -157,6 +172,18 @@ do
   echo "util time: (ssd) " $(( $end_2 - $start_2 ))
 done;
 
+echo "Switching again..."
+for i in `ls rbd_dmc_*.fio`;
+do
+  start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+  start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+  /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio $i;
+  end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+  end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+  echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+  echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+done;
+
 #RBD bench level
 echo "RBD bench level"
 for i in 1 2 4 8 16 32; 
@@ -191,4 +218,12 @@ do
   echo "util time: (ssd) " $(( $end_2 - $start_2 ))
   
   echo "Switching.."
+  start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+  start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+  /usr/bin/time -f "CPU: %P" rbd bench  pool_dmc/test --io-type write --io-pattern rand  --io-total 512M --io-threads $i
+  end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+  end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+  echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+  echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+  
 done
