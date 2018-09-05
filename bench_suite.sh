@@ -50,6 +50,23 @@ shift $((OPTIND - 1))
 
 echo 3 | tee /proc/sys/vm/drop_caches && sync
 
+echo "Checking arguments:"
+if [ ! -z $disk_target_ssd ]; then echo "disk_target_hdd: $disk_target_hdd"; fi
+if [ ! -z $disk_target_hdd ]; then echo "disk_target_ssd: $disk_target_ssd"; fi
+
+if [ ! -z $osd_mix_ssd ]; then echo "osd_mix_hdd: $osd_mix_hdd"; fi
+if [ ! -z $osd_mix_hdd ]; then echo "osd_mix_ssd: $osd_mix_ssd"; fi
+
+if [ ! -z $osd_fs_ssd ]; then echo "osd_fs_hdd: $osd_fs_hdd"; fi
+if [ ! -z $osd_fs_hdd ]; then echo "osd_fs_ssd: $osd_fs_ssd"; fi
+
+if [ ! -z $osd_dmc_ssd ]; then echo "osd_dmc_hdd: $osd_dmc_hdd"; fi
+if [ ! -z $osd_dmc_hdd ]; then echo "osd_dmc_ssd: $osd_dmc_ssd"; fi
+
+
+if [ ! -z $osd_ssd ]; then echo "osd_ssd: $osd_ssd"; fi
+if [ ! -z $osd_hdd ]; then echo "osd_hdd: $osd_hdd"; fi
+
 # disk_target_ssd : sdd
 # disk_target_hdd : sdh
 # osd_ssd : sdc 
@@ -62,20 +79,23 @@ echo 3 | tee /proc/sys/vm/drop_caches && sync
 # osd_dmc_hdd : sdn
 
 # Disk level
-#blocksize=4K
-#
-#for iod in 1 2 4 8 16 32;
-#do 
-#  for target in $disk_target_ssd $disk_target_hdd; 
-#  do
-#    start=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`;
-#    /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio --filename=/dev/$target --direct=1 --sync=1 --rw=randwrite --bs=$blocksize --numjobs=1 --iodepth=$iod --runtime=60 --time_based --ioengine=libaio --group_reporting --name="$target"_"$blocksize"_"$iod"_test_run_00 
-#    end=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`
-#    echo "util time: " $(( $end - $start ))
-#  done
-#done
-#
-#sleep 10
+blocksize=4K
+
+if [[ -z $osd_ssd || -z $osd_hdd ]]; then echo "[FIO] Skipping raw disk test. At least a disk was not provided by the user (2 expected)." ;
+else
+  for iod in 1 2 4 8 16 32;
+  do 
+    for target in $disk_target_ssd $disk_target_hdd; 
+    do
+      start=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`;
+      /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio --filename=/dev/$target --direct=1 --sync=1 --rw=randwrite --bs=$blocksize --numjobs=1 --iodepth=$iod --runtime=60 --time_based --ioengine=libaio --group_reporting --name="$target"_"$blocksize"_"$iod"_test_run_00 
+      end=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`
+      echo "util time: " $(( $end - $start ))
+    done
+  done
+fi
+
+sleep 10
 
 # Rados level
 echo "RADOS level"
