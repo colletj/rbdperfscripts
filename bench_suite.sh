@@ -25,12 +25,15 @@ while getopts 'hc:r:m:f:s:d:' opt; do
        ;;
     m) osd_mix_ssd=`echo $OPTARG | sed 's/,.*//'`
        osd_mix_hdd=`echo $OPTARG | sed 's/.*,//'`
+       osd_mix=1;
        ;;
     c) osd_dmc_ssd=`echo $OPTARG | sed 's/,.*//'`
        osd_dmc_hdd=`echo $OPTARG | sed 's/.*,//'`
+       osd_dmc=1;
        ;;
     f) osd_fs_ssd=`echo $OPTARG | sed 's/,.*//'`
        osd_fs_hdd=`echo $OPTARG | sed 's/.*,//'`
+       osd_fs=1;
        ;;
     s) osd_ssd=$OPTARG
        ;;
@@ -102,47 +105,62 @@ echo "RADOS level"
 
 for i in 1 2 4 8 12 16 32;
 do
-  start=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
-  /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_ssd 45 write --no-cleanup  -t $i -b 4096
-  end=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-  echo "util time: " $(( $end - $start ))
+  if [ -z $osd_ssd ]; then echo "[RADOS] Skipping ssd run ($i)." ;
+  else
+    start=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_ssd 45 write --no-cleanup  -t $i -b 4096
+    end=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    echo "util time: " $(( $end - $start ))
+  fi
+ 
+  if [ -z $osd_hdd ]; then echo "[RADOS] Skipping hdd run ($i)." ;
+  else
+    start=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_hdd 45 write --no-cleanup  -t $i -b 4096
+    end=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    echo "util time: " $(( $end - $start ))
+  fi
+  
+  if [ -z $osd_mix ]; then echo "[RADOS] Skipping mix run ($i)." ;
+  else
+    start_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    start_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_mix 45 write --no-cleanup  -t $i -b 4096
+    end_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    end_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+  fi
 
-  start=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-  /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_hdd 45 write --no-cleanup  -t $i -b 4096
-  end=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-  echo "util time: " $(( $end - $start ))
-
-  start_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-  start_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
-  /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_mix 45 write --no-cleanup  -t $i -b 4096
-  end_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-  end_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-  echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-  echo "util time: (ssd) " $(( $end_2 - $start_2 ))
-
-  start_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-  start_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
-  /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_fs 45 write --no-cleanup  -t $i -b 4096
-  end_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-  end_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-  echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-  echo "util time: (ssd) " $(( $end_2 - $start_2 ))
-
-  start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-  start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
-  /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_dmc 45 write --no-cleanup  -t $i -b 4096
-  end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-  end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-  echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-  echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+  if [ -z $osd_fs ]; then echo "[RADOS] Skipping fs run ($i)." ;
+  else
+    start_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    start_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_fs 45 write --no-cleanup  -t $i -b 4096
+    end_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    end_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+  fi
+  
+  if [ -z $osd_dmc ]; then echo "[RADOS] Skipping dmc run ($i)." ;
+  else
+    start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_dmc 45 write --no-cleanup  -t $i -b 4096
+    end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+  fi
 
   sleep 5
 
-  rados -p pool_ssd cleanup
-  rados -p pool_hdd cleanup
-  rados -p pool_mix cleanup
-  rados -p pool_dmc cleanup
-  rados -p pool_fs cleanup
+  if [ ! -z $osd_ssd ]; then rados -p pool_ssd cleanup; fi
+  if [ ! -z $osd_ssd ]; then rados -p pool_hdd cleanup; fi
+  if [ ! -z $osd_ssd ]; then rados -p pool_mix cleanup; fi
+  if [ ! -z $osd_ssd ]; then rados -p pool_dmc cleanup; fi
+  if [ ! -z $osd_ssd ]; then rados -p pool_fs cleanup; fi
 done
 
 sleep 10
