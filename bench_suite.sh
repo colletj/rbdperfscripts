@@ -81,6 +81,32 @@ if [ ! -z $osd_hdd ]; then echo "osd_hdd: $osd_hdd"; fi
 # osd_dmc_ssd : sdd
 # osd_dmc_hdd : sdn
 
+# Preflight checks
+
+if [ ! -z $osd_ssd ]; then
+ ./bench_check_ceph_config.sh -s
+ if [ $? -eq 1 ]; then unset $osd_ssd; fi
+fi
+
+if [ ! -z $osd_hdd ]; then
+ ./bench_check_ceph_config.sh -d
+ if [ $? -eq 1 ]; then unset $osd_hdd; fi
+fi
+
+if [ ! -z $osd_mix ]; then
+ ./bench_check_ceph_config.sh -m
+ if [ $? -eq 1 ]; then unset $osd_mix; fi
+fi
+
+if [ ! -z $osd_fs  ]; then
+ ./bench_check_ceph_config.sh -f
+ if [ $? -eq 1 ]; then unset $osd_fs; fi
+fi
+
+if [ ! -z $osd_dmc ]; then
+ ./bench_check_ceph_config.sh -c
+ if [ $? -eq 1 ]; then unset $osd_dmc; fi
+fi
 # Disk level
 blocksize=4K
 
