@@ -1,5 +1,7 @@
 #! /bin/bash
 # 
+# cephkelly cluster flavor
+#
 # Usage: 
 # bench_suite.sh -r sdd,sdh -m sde,sdj -f sdf,sdl -s sdc -d sdg
 
