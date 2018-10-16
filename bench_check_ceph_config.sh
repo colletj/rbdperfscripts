@@ -122,11 +122,11 @@ echo ""
 if [ ! -z $testing_ssd ];
 then
   echo "[SSD] Starting checks";
-  ceph osd lspools | grep "pool_ssd" -q;
+  ceph osd lspools | grep "jcollet-bench-test-pool" -q;
   if [ $? -eq 0 ];
   then
     echo "[SSD]   Pool exists";
-    rbd info pool_ssd/test > /dev/null;
+    rbd info jcollet-bench-test-pool/test > /dev/null;
     if [ $? -eq 0 ]; 
     then 
       echo "[SSD]   RBD image exists"; 

@@ -53,16 +53,12 @@ while getopts 'hc:r:m:f:s:d:' opt; do
 done
 shift $((OPTIND - 1))
 
-echo 3 | tee /proc/sys/vm/drop_caches && sync
-
 echo "Checking arguments:"
 if [ ! -z $disk_target_ssd ]; then echo "disk_target_hdd: $disk_target_hdd"; fi
 if [ ! -z $disk_target_hdd ]; then echo "disk_target_ssd: $disk_target_ssd"; fi
 
 if [ ! -z $osd_mix_ssd ]; then echo "osd_mix_hdd: $osd_mix_hdd"; fi
 if [ ! -z $osd_mix_hdd ]; then echo "osd_mix_ssd: $osd_mix_ssd"; fi
-
-if [ ! -z $osd_fs_ssd ]; then echo "osd_fs_hdd: $osd_fs_hdd"; fi
 if [ ! -z $osd_fs_hdd ]; then echo "osd_fs_ssd: $osd_fs_ssd"; fi
 
 if [ ! -z $osd_dmc_ssd ]; then echo "osd_dmc_hdd: $osd_dmc_hdd"; fi
@@ -71,6 +67,8 @@ if [ ! -z $osd_dmc_hdd ]; then echo "osd_dmc_ssd: $osd_dmc_ssd"; fi
 
 if [ ! -z $osd_ssd ]; then echo "osd_ssd: $osd_ssd"; fi
 if [ ! -z $osd_hdd ]; then echo "osd_hdd: $osd_hdd"; fi
+
+echo 3 | tee /proc/sys/vm/drop_caches && sync
 
 # disk_target_ssd : sdd
 # disk_target_hdd : sdh
@@ -118,10 +116,10 @@ else
   do 
     for target in $disk_target_ssd $disk_target_hdd; 
     do
-      start=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`;
+      #start=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`;
       /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio --filename=/dev/$target --direct=1 --sync=1 --rw=randwrite --bs=$blocksize --numjobs=1 --iodepth=$iod --runtime=60 --time_based --ioengine=libaio --group_reporting --name="$target"_"$blocksize"_"$iod"_test_run_00 
-      end=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`
-      echo "util time: " $(( $end - $start ))
+      #end=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`
+      #echo "util time: " $(( $end - $start ))
     done
   done
 fi
@@ -135,60 +133,60 @@ for i in 1 2 4 8 12 16 32;
 do
   if [ -z $osd_ssd ]; then echo "[RADOS] Skipping ssd run ($i)." ;
   else
-    start=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
-    /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_ssd 45 write --no-cleanup  -t $i -b 4096
-    end=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: " $(( $end - $start ))
+    #start=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p jcollet-bench-test-pool 45 write --no-cleanup  -t $i -b 4096
+    #end=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: " $(( $end - $start ))
   fi
  
   if [ -z $osd_hdd ]; then echo "[RADOS] Skipping hdd run ($i)." ;
   else
-    start=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_hdd 45 write --no-cleanup  -t $i -b 4096
-    end=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: " $(( $end - $start ))
+    #end=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: " $(( $end - $start ))
   fi
   
   if [ -z $osd_mix ]; then echo "[RADOS] Skipping mix run ($i)." ;
   else
-    start_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-    start_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_mix 45 write --no-cleanup  -t $i -b 4096
-    end_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    end_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+    #end_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #end_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    #echo "util time: (ssd) " $(( $end_2 - $start_2 ))
   fi
 
   if [ -z $osd_fs ]; then echo "[RADOS] Skipping fs run ($i)." ;
   else
-    start_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-    start_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_fs 45 write --no-cleanup  -t $i -b 4096
-    end_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    end_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+    #end_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #end_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    #echo "util time: (ssd) " $(( $end_2 - $start_2 ))
   fi
   
   if [ -z $osd_dmc ]; then echo "[RADOS] Skipping dmc run ($i)." ;
   else
-    start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-    start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "performed in: %e secs\nCPU: %P" rados bench -p pool_dmc 45 write --no-cleanup  -t $i -b 4096
-    end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+    #end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    #echo "util time: (ssd) " $(( $end_2 - $start_2 ))
   fi
 
   sleep 5
 
-  if [ ! -z $osd_ssd ]; then rados -p pool_ssd cleanup; fi
-  if [ ! -z $osd_ssd ]; then rados -p pool_hdd cleanup; fi
-  if [ ! -z $osd_ssd ]; then rados -p pool_mix cleanup; fi
-  if [ ! -z $osd_ssd ]; then rados -p pool_dmc cleanup; fi
-  if [ ! -z $osd_ssd ]; then rados -p pool_fs cleanup; fi
+  if [ ! -z $osd_ssd ]; then rados -p jcollet-bench-test-pool cleanup; fi
+  if [ ! -z $osd_hdd ]; then rados -p pool_hdd cleanup; fi
+  if [ ! -z $osd_mix ]; then rados -p pool_mix cleanup; fi
+  if [ ! -z $osd_dmc ]; then rados -p pool_dmc cleanup; fi
+  if [ ! -z $osd_fs  ]; then rados -p pool_fs cleanup; fi
 done
 
 sleep 10
@@ -200,10 +198,10 @@ if [ -z $osd_ssd ]; then echo "[FIO/RBD] Skipping fio rbd test for ssd osd." ;
 else
   for i in `ls rbd_ssd_*.fio`;
   do
-    start=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio $i;
-    end=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: " $(( $end - $start ))
+    #end=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: " $(( $end - $start ))
   done
 fi
 
@@ -212,10 +210,10 @@ if [ -z $osd_hdd ]; then echo "[FIO/RBD] Skipping fio rbd test for hdd osd." ;
 else
   for i in `ls rbd_hdd_*.fio`;
   do
-    start=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio $i;
-    end=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: " $(( $end - $start ))
+    #end=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: " $(( $end - $start ))
   done
 fi
 
@@ -224,13 +222,13 @@ if [ -z $osd_mix ]; then echo "[FIO/RBD] Skipping fio rbd test for mix osd." ;
 else
   for i in `ls rbd_mix_*.fio`;
   do
-    start_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-    start_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio $i;
-    end_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    end_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+    #end_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #end_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    #echo "util time: (ssd) " $(( $end_2 - $start_2 ))
   done
 fi
 
@@ -239,13 +237,13 @@ if [ -z $osd_fs ]; then echo "[FIO/RBD] Skipping fio rbd test for fs osd." ;
 else
   for i in `ls rbd_fs_*.fio`;
   do
-    start_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-    start_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio $i;
-    end_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    end_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+    #end_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #end_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    #echo "util time: (ssd) " $(( $end_2 - $start_2 ))
   done;
 fi
 
@@ -254,13 +252,13 @@ if [ -z $osd_dmc ]; then echo "[FIO/RBD] Skipping fio rbd test for dmc osd." ;
 else
   for i in `ls rbd_dmc_*.fio`;
   do
-    start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-    start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio $i;
-    end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+    #end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    #echo "util time: (ssd) " $(( $end_2 - $start_2 ))
   done;
 fi
 
@@ -270,54 +268,54 @@ for i in 1 2 4 8 16 32;
 do
   if [ -z $osd_ssd ]; then echo "[RADOS] Skipping ssd run ($i)." ;
   else
-    start=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
-    /usr/bin/time -f "CPU: %P" rbd bench  pool_ssd/test --io-type write --io-pattern rand  --io-total 512M --io-threads $i
-    end=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: " $(( $end - $start ))
+    #start=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    /usr/bin/time -f "CPU: %P" rbd bench  jcollet-bench-test-pool/test --io-type write --io-pattern rand  --io-total 512M --io-threads $i
+    #end=`egrep "\b$osd_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: " $(( $end - $start ))
   fi
   
   echo "Switching.."
   if [ -z $osd_hdd ]; then echo "[RADOS] Skipping hdd run ($i)." ;
   else
-    start=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "CPU: %P" rbd bench  pool_hdd/test --io-type write --io-pattern rand  --io-total 512M --io-threads $i
-    end=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: " $(( $end - $start ))
+    #end=`egrep "\b$osd_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: " $(( $end - $start ))
   fi
   
   echo "Switching.."
   if [ -z $osd_mix ]; then echo "[RADOS] Skipping mix run ($i)." ;
   else
-    start_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-    start_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "CPU: %P" rbd bench  pool_mix/test --io-type write --io-pattern rand  --io-total 512M --io-threads $i
-    end_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    end_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+    #end_1=`egrep "\b$osd_mix_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #end_2=`egrep "\b$osd_mix_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    #echo "util time: (ssd) " $(( $end_2 - $start_2 ))
   fi
   
   echo "Switching.."
   if [ -z $osd_fs ]; then echo "[RBD] Skipping fs run ($i)." ;
   else
-    start_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-    start_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "CPU: %P" rbd bench  pool_fs/test --io-type write --io-pattern rand  --io-total 512M --io-threads $i
-    end_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    end_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+    #end_1=`egrep "\b$osd_fs_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #end_2=`egrep "\b$osd_fs_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    #echo "util time: (ssd) " $(( $end_2 - $start_2 ))
   fi
     
   echo "Switching.."
   if [ -z $osd_dmc ]; then echo "[RBD] Skipping dmc run ($i)." ;
   else
-    start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
-    start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`;
+    #start_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`;
     /usr/bin/time -f "CPU: %P" rbd bench  pool_dmc/test --io-type write --io-pattern rand  --io-total 512M --io-threads $i
-    end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
-    end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
-    echo "util time: (hdd) " $(( $end_1 - $start_1 ))
-    echo "util time: (ssd) " $(( $end_2 - $start_2 ))
+    #end_1=`egrep "\b$osd_dmc_hdd\b" /proc/diskstats | awk '{ print $13 }'`
+    #end_2=`egrep "\b$osd_dmc_ssd\b" /proc/diskstats | awk '{ print $13 }'`
+    #echo "util time: (hdd) " $(( $end_1 - $start_1 ))
+    #echo "util time: (ssd) " $(( $end_2 - $start_2 ))
   fi
 done
