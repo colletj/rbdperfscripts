@@ -17,13 +17,6 @@ BEGIN {
 
   if(out)
   {
-    if($0 ~ /Switching\.\.\./) { curDisk = "hdd"; }
-    if($0 ~ /Switching again\.\.\./) 
-    {
-      if( curDisk ~ /hdd/ ) { curDisk = "mix"; }
-      else if( curDisk ~ /mix/ ) { curDisk = "fs "; }
-      else if( curDisk ~ /fs / ) { curDisk = "dmc"; }
-    }
     if($0 ~ /IOPS[=:]/)
     {
       gsub(/IOPS=/,"");
@@ -50,28 +43,8 @@ BEGIN {
     if($0 ~ /performed in:/)
     {
       $3 = $3*1000;
-      printf $3" ";
+      printf $3" \n";
     } 
-
-    if($0 ~ /util time:/)
-    {
-      if(curDisk ~ "mix")
-      {
-        if($0 ~ /\(hdd\)/)       { printf ($4+0)" "; }
-        else if($0 ~ /\(ssd\)/)  { printf ($4+0)" \n";  }
-      }
-      else if(curDisk ~ "fs ")
-      {
-        if($0 ~ /\(hdd\)/)       { printf ($4+0)" "; }
-        else if($0 ~ /\(ssd\)/)  { printf ($4+0)" \n";  }
-      }
-      else if(curDisk ~ "dmc")
-      {
-        if($0 ~ /\(hdd\)/)       { printf ($4+0)" "; }
-        else if($0 ~ /\(ssd\)/)  { printf ($4+0)" \n";  }
-      }
-      else { print ($3+0); }
-    }
 
     if($0 ~ /pid=/)
     {

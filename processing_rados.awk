@@ -7,12 +7,12 @@
 BEGIN {
   out=0;
   curDrive ="ssd";
-  print "DriveType IOPS AverageLatency(ms) RunTime UtilTime" 
+  print "DriveType IOPS AverageLatency(ms) RunTime" 
 }
 
 {
-  if($0 ~ "RADOS") { out=1; }
-  if($0 ~ "RBD") { out=0; }
+  if($0 ~ "RADOS level") { out=1; }
+  if($0 ~ "RBD level") { out=0; }
 
   if(out)
   {
@@ -22,12 +22,6 @@ BEGIN {
       gsub(/IOPS:/,"");
       gsub(/,/,"");
       printf curDrive" "($2+0)" ";
-
-      if(curDrive ~ /hdd/) { curDrive = "mix" }
-      else if(curDrive ~ /ssd/) { curDrive = "hdd" }
-      else if(curDrive ~ /mix/) { curDrive = "fs " }
-      else if(curDrive ~ /fs /) { curDrive = "dmc" }
-      else if(curDrive ~ /dmc/) { curDrive = "ssd" }
     } 
 
     if($0 ~ /Average Latency/)
@@ -38,29 +32,8 @@ BEGIN {
     if($0 ~ /performed in:/)
     {
       $3 = $3*1000;
-      printf $3" ";
+      printf $3" \n";
     } 
-
-    if($0 ~ /util time:/)
-    {
-      if(curDrive ~ "ssd")
-      {
-        if($0 ~ /\(hdd\)/)       { printf ($4+0)" "; }
-        else if($0 ~ /\(ssd\)/)  { printf ($4+0)" \n";  }
-      }
-      else if(curDrive ~ "dmc")
-      {
-        if($0 ~ /\(hdd\)/)       { printf ($4+0)" "; }
-        else if($0 ~ /\(ssd\)/)  { printf ($4+0)" \n";  }
-      }
-      else if(curDrive ~ "fs ")
-      {
-        if($0 ~ /\(hdd\)/)       { printf ($4+0)" "; }
-        else if($0 ~ /\(ssd\)/)  { printf ($4+0)" \n";  }
-      }
-      else { print ($3+0); }
-    }
-    
   }
 
 }
