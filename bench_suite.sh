@@ -116,10 +116,10 @@ else
   do 
     for target in $disk_target_ssd $disk_target_hdd; 
     do
-      #start=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`;
+      start=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`;
       /usr/bin/time -f "performed in: %e secs\nCPU: %P" fio --filename=/dev/$target --direct=1 --sync=1 --rw=randwrite --bs=$blocksize --numjobs=1 --iodepth=$iod --runtime=60 --time_based --ioengine=libaio --group_reporting --name="$target"_"$blocksize"_"$iod"_test_run_00 
-      #end=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`
-      #echo "util time: " $(( $end - $start ))
+      end=`egrep "\b$target\b" /proc/diskstats | awk '{ print $13 }'`
+      echo "util time: " $(( $end - $start ))
     done
   done
 fi
