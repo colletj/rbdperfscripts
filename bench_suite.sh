@@ -110,7 +110,7 @@ fi
 # Disk level
 blocksize=4K
 
-if [[ -z $osd_ssd || -z $osd_hdd ]]; then echo "[FIO] Skipping raw disk test. At least a disk was not provided by the user (2 expected)." ;
+if [[ -z $disk_target_ssd || -z $disk_target_hdd ]]; then echo "[FIO] Skipping raw disk test. At least a disk was not provided by the user (2 expected)." ;
 else
   for iod in 1 2 4 8 16 32;
   do 
