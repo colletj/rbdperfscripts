@@ -48,10 +48,8 @@ BEGIN {
       print $3;
     }
 
-    if($0 ~ /sdd_|sdh_/) 
+    if($0 ~ /vdb_/) 
     {
-      gsub(/sdd/,"ssd")
-      gsub(/sdh/,"hdd")
       if($0 ~ /pid/) 
       {
 	gsub(/_/," "); 
