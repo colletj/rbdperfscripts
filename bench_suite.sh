@@ -107,6 +107,7 @@ if [ ! -z $osd_dmc ]; then
  ./bench_check_ceph_config.sh -c
  if [ $? -eq 1 ]; then unset $osd_dmc; fi
 fi
+
 # Disk level
 blocksize=4K
 

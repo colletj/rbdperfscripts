@@ -47,8 +47,6 @@ if [ ! -z $testing_mfs ]; then echo "test mixed filestore configuration"; fi
 if [ ! -z $testing_ssd ]; then echo "test ssd-only configuration       "; fi
 if [ ! -z $testing_hdd ]; then echo "test hdd-only configuration       "; fi
 if [ ! -z $testing_dmc ]; then echo "test dm-cache configuration       "; fi
-echo ""
-echo ""
 
 if [ ! -z $testing_mix ];
 then
