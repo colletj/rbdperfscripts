@@ -1,6 +1,7 @@
 # rbdperfscripts
 
-Simple ceph-rbd single-node I/O performance benchmarking scripts
+Simple ceph-rbd single-node I/O performance benchmarking scripts.
+The master branch holds the most generic version of the bench suite while specialized branchs where added when needed.
 
 
 ## Architecture
